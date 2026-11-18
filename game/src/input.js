@@ -1,53 +1,29 @@
-// Keyboard and pointer input. Held keys give a steering direction; one-shot presses (start or
-// restart, pause) are queued as bit flags and taken once by the loop, so a press between two
-// frames is never lost and never counted twice.
-
-export const ACTION_CONFIRM = 1;
-export const ACTION_PAUSE = 2;
-
-const LEFT = new Set(['ArrowLeft', 'KeyA']);
-const RIGHT = new Set(['ArrowRight', 'KeyD']);
-const CONFIRM = new Set(['Space', 'Enter']);
-const PAUSE = new Set(['KeyP', 'Escape']);
-
-export function createInput(target) {
-  let left = false;
-  let right = false;
-  let actions = 0;
-
-  window.addEventListener('keydown', (event) => {
-    if (LEFT.has(event.code)) left = true;
-    else if (RIGHT.has(event.code)) right = true;
-    else if (CONFIRM.has(event.code)) {
-      if (!event.repeat) actions |= ACTION_CONFIRM;
-    } else if (PAUSE.has(event.code)) {
-      if (!event.repeat) actions |= ACTION_PAUSE;
-    } else return;
-    event.preventDefault();
+// Keyboard + mouse input. `keys` is held state, `pressed` is edge-triggered per frame.
+export function createInput() {
+  const keys = new Set();
+  const pressed = new Set();
+  const mouse = { dx: 0, dy: 0, dragging: false, locked: false };
+  addEventListener('keydown', (e) => {
+    if (['ArrowUp', 'ArrowDown', 'Space'].includes(e.code)) e.preventDefault();
+    if (!e.repeat) pressed.add(e.code);
+    keys.add(e.code);
   });
-  window.addEventListener('keyup', (event) => {
-    if (LEFT.has(event.code)) left = false;
-    else if (RIGHT.has(event.code)) right = false;
+  addEventListener('keyup', (e) => keys.delete(e.code));
+  addEventListener('blur', () => keys.clear());
+  addEventListener('mousedown', () => { mouse.dragging = true; });
+  addEventListener('mouseup', () => { mouse.dragging = false; });
+  addEventListener('mousemove', (e) => {
+    if (mouse.dragging || mouse.locked) { mouse.dx += e.movementX || 0; mouse.dy += e.movementY || 0; }
   });
-  // A key released while the tab is hidden never sends keyup: let go of everything on blur.
-  window.addEventListener('blur', () => {
-    left = false;
-    right = false;
+  document.addEventListener('pointerlockchange', () => {
+    mouse.locked = document.pointerLockElement != null;
   });
-  target.addEventListener('pointerdown', () => {
-    actions |= ACTION_CONFIRM;
-  });
-
   return {
-    /** -1 for left, 1 for right, 0 for neither or both. */
-    direction() {
-      return (right ? 1 : 0) - (left ? 1 : 0);
-    },
-    /** The one-shot presses since the last call, as ACTION_* flags. */
-    takeActions() {
-      const taken = actions;
-      actions = 0;
-      return taken;
-    },
+    keys, mouse,
+    down: (c) => keys.has(c),
+    hit: (c) => pressed.has(c),
+    endFrame() { pressed.clear(); mouse.dx = 0; mouse.dy = 0; },
+    press(code) { pressed.add(code); keys.add(code); setTimeout(() => keys.delete(code), 60); },
+    hold(code, on) { if (on) keys.add(code); else keys.delete(code); },
   };
 }

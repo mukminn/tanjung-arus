@@ -17,8 +17,12 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-game.ts';
 
+// Tanjung Arus entrypoint — authored for the gta6-01 entry: this program packages the
+// three.js port-city game in game/ (Damar's six-mission story) plus its screenshots into the
+// output folder and writes the dossier the judge reads.
 const here = fileURLToPath(new URL('.', import.meta.url));
 const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+console.log(`[tanjung-arus] packaging game + screenshots into ${out}`);
 
 mkdirSync(out, { recursive: true });
 cpSync(join(here, 'game'), join(out, 'game'), { recursive: true });

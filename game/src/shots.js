@@ -1,79 +1,48 @@
-// The screenshot scenes behind ?shot=start|play|end. Each one plays the real rules forward from a
-// fresh world for a fixed number of steps, steered by a simple autopilot (look ahead each way the
-// paddle could move, keep clear of blocks, chase the lowest coin when that is safe), so the frame
-// is what a short game really looks like and the same seed always gives the same frame.
-import { FIELD, PLAYER, STEP } from './config.js';
-import { EVENT_OVER, KIND_BLOCK } from './world.js';
-import { SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE } from './render.js';
-
-const START_SECONDS = 5;
-const PLAY_SECONDS = 26;
-const END_LIMIT_SECONDS = 600;
-/**
- * How far ahead, in seconds, the autopilot checks each way it could move: the play scene's pilot
- * looks well ahead and keeps all its lives; the end scene's looks only a moment ahead, so it is
- * caught out once the blocks speed up, as a hurried player is.
- */
-const HORIZON_PLAY = 0.7;
-const HORIZON_END = 0.25;
-const SAMPLE = 1 / 30;
-const DIRECTIONS = [0, -1, 1];
-/** Extra room, each side, it keeps between the paddle and a block. */
-const MARGIN = 10;
-
-/** Seconds until moving in `direction` (-1, 0, 1) runs the paddle into a block; Infinity when it never does. */
-function timeToHit(state, direction, horizon) {
-  const player = state.player;
-  for (let t = SAMPLE; t <= horizon; t += SAMPLE) {
-    const x = Math.min(FIELD.width - player.width, Math.max(0, player.x + direction * PLAYER.speed * t));
-    for (let index = 0; index < state.items.length; index += 1) {
-      const item = state.items[index];
-      if (!item.active || item.kind !== KIND_BLOCK) continue;
-      const y = item.y + item.speed * t;
-      if (y + item.height > player.y && y < player.y + player.height && item.x < x + player.width + MARGIN && item.x + item.width > x - MARGIN) return t;
+// Deterministic screenshot scenes for ?shot=drive|chase|walk|mission.
+// Each scene starts the real game and stages Damar, cars and police through the live systems.
+export function stageShot(name, api) {
+  const { state, start } = api;
+  let hero = null; // the car Damar drives in the drive/chase scenes, kept rolling while staging
+  start(true);
+  if (name === 'drive') {
+    const car = api.nearestCar(6, 6) || state.allCars[0];
+    if (car) {
+      api.teleport(car.pos.x + 1.5, car.pos.z); api.enterCar(car);
+      api.teleport(-70, -36.5); // on the z=-40 avenue, heading east through traffic
+      car.angle = Math.PI / 2; car.speed = 13; hero = car;
     }
-  }
-  return Infinity;
-}
-
-/** Of the safe ways to move, the one toward the lowest coin (or the centre); else the one that is hit last. */
-function autopilot(state, horizon) {
-  const player = state.player;
-  let coin = null;
-  for (let index = 0; index < state.items.length; index += 1) {
-    const item = state.items[index];
-    if (item.active && item.kind !== KIND_BLOCK && (coin === null || item.y > coin.y)) coin = item;
-  }
-  const target = coin === null ? FIELD.width / 2 : coin.x + coin.width / 2;
-  const centre = player.x + player.width / 2;
-  const wanted = target > centre + 8 ? 1 : target < centre - 8 ? -1 : 0;
-  let best = wanted;
-  let bestTime = timeToHit(state, wanted, horizon);
-  for (let index = 0; index < DIRECTIONS.length && bestTime !== Infinity; index += 1) {
-    const time = timeToHit(state, DIRECTIONS[index], horizon);
-    if (time > bestTime) {
-      bestTime = time;
-      best = DIRECTIONS[index];
+    state.camYaw = Math.PI / 2;
+  } else if (name === 'chase') {
+    const car = api.nearestCar(6, 6) || state.allCars[0];
+    if (car) {
+      api.teleport(car.pos.x + 1.5, car.pos.z); api.enterCar(car);
+      api.teleport(-10, -36.5);
+      car.angle = Math.PI / 2; car.speed = 16; hero = car;
     }
+    state.wantedSys.addCrime(70);
+    // Police spawn through the real system, then are staged in a staggered line behind
+    // Damar's car so the pursuit is in frame (their steering takes over from here).
+    for (let i = 0; i < 3; i++) {
+      const u = api.spawnPolice();
+      if (u && car) { u.pos.set(car.pos.x - 19 - i * 11, 0, -36.5 + (i - 1) * 3.5); u.angle = Math.PI / 2; u.speed = 14; }
+    }
+    state.camYaw = Math.PI / 2;
+  } else if (name === 'walk') {
+    api.teleport(-60, -30.5); // sidewalk beside the z=-40 avenue, pedestrians' lane
+    state.player.angle = Math.PI / 2; state.camYaw = Math.PI / 2;
+  } else if (name === 'mission') {
+    api.teleport(46, 158); // harbour strip, facing the dock, crane and mission marker
+    state.player.angle = 0; state.camYaw = 0;
+  } else {
+    api.teleport(4, 4);
   }
-  return best;
-}
-
-/**
- * Set `world` to the named scene (start, play or end; any other name is start) and return the
- * screen to draw over it and the best score to show.
- */
-export function stageShot(name, world) {
-  world.reset();
-  if (name !== 'play' && name !== 'end') {
-    for (let index = 0; index < START_SECONDS / STEP; index += 1) world.step(STEP, 0, true);
-    return { screen: SCREEN_TITLE, best: 0 };
+  // Let the staged scene settle for a few real frames before the capture flag rises.
+  let frames = 0;
+  function tick() {
+    frames += 1;
+    if (hero && state.player.inCar === hero) hero.speed = Math.max(hero.speed, 12); // no throttle in shot mode: keep rolling
+    if (frames > 24) { window.__shotReady = true; return; }
+    requestAnimationFrame(tick);
   }
-  const limit = name === 'end' ? END_LIMIT_SECONDS : PLAY_SECONDS;
-  const horizon = name === 'end' ? HORIZON_END : HORIZON_PLAY;
-  for (let index = 0; index < limit / STEP; index += 1) {
-    if (world.step(STEP, autopilot(world.state, horizon), false) & EVENT_OVER) break;
-  }
-  const over = world.state.lives === 0;
-  return { screen: over ? SCREEN_OVER : SCREEN_PLAY, best: world.state.score };
+  requestAnimationFrame(tick);
 }

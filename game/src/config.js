@@ -6,10 +6,10 @@ export const CITY = {
   dockZ: 168,         // south of this z is the harbour strip
 };
 export const DISTRICTS = [
-  { name: 'Dermaga Timur', x: 90, z: 185 },
-  { name: 'Pasar Pagi', x: -85, z: -10 },
-  { name: 'Bukit Kelapa', x: -95, z: -120 },
-  { name: 'Menara Kaca', x: 95, z: -95 },
+  { name: 'East Harbour', x: 90, z: 185 },
+  { name: 'Morning Market', x: -85, z: -10 },
+  { name: 'Coconut Hill', x: -95, z: -120 },
+  { name: 'Glass Towers', x: 95, z: -95 },
 ];
 export const VEHICLE_TYPES = {
   kancil: { label: 'Kancil EV', topSpeed: 26, accel: 14, size: [1.8, 3.6], color: 0x3fa7d6 },

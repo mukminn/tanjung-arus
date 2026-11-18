@@ -1,4 +1,5 @@
 // Police: units spawn near (but not on) Damar when wanted, steer in pursuit, ram and bust.
+// Roof lightbars alternate red/blue while wanted, and sit dim when the heat is off.
 import { createVehicle, syncCarMesh } from './vehicles.js';
 
 export function createPolice(scene) {
@@ -14,7 +15,21 @@ export function createPolice(scene) {
     units.push(car);
     return car;
   }
+  function blinkLightbars(stars) {
+    const phase = Math.floor(performance.now() / 220) % 2 === 0;
+    for (const u of units) {
+      const bar = u.mesh.userData.lightbar; if (!bar) continue;
+      if (stars > 0) {
+        bar.red.emissiveIntensity = phase ? 2.6 : 0.15;
+        bar.blue.emissiveIntensity = phase ? 0.15 : 2.6;
+      } else {
+        bar.red.emissiveIntensity = 0.25;
+        bar.blue.emissiveIntensity = 0.25;
+      }
+    }
+  }
   function update(dt, state, world) {
+    blinkLightbars(state.wanted.stars);
     const target = state.player.inCar ? state.player.inCar.pos : state.player.pos;
     const want = desiredCount(state.wanted.stars);
     while (units.filter((u) => !u.dead).length < want) spawn(target);

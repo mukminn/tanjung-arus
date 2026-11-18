@@ -1,4 +1,5 @@
 // Combat: J punches whoever is close in front; K fires a hitscan shot with a visible tracer.
+// Every swing or shot (hit or miss) starts Damar's attack animation via player.attackT.
 import * as THREE from 'three';
 
 export function createCombat(scene, audio, fx) {
@@ -34,6 +35,7 @@ export function createCombat(scene, audio, fx) {
   }
   function punch(state) {
     const o = originAndDir(state); if (!o) return false;
+    state.player.attackT = 0.0001; state.player.attackKind = 'punch';
     audio.punch();
     let best = null, bestD = 2.1;
     for (const t of targets(state)) {
@@ -45,6 +47,7 @@ export function createCombat(scene, audio, fx) {
   }
   function shoot(state) {
     const o = originAndDir(state); if (!o) return false;
+    state.player.attackT = 0.0001; state.player.attackKind = 'shoot';
     audio.shot();
     state.wantedSys.addCrime(18);
     let best = null, bestD = 42;

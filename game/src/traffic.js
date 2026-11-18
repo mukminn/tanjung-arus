@@ -1,4 +1,5 @@
 // Traffic AI: civilian cars loop the road grid, turning at intersections, braking for others.
+// Braking cars light their tail lights (car.braking drives the emissive tail material).
 import { CITY } from './config.js';
 import { createVehicle, syncCarMesh } from './vehicles.js';
 
@@ -31,6 +32,7 @@ export function createTraffic(scene, count = 10) {
         const ahead = dx * fx + dz * fz, side = Math.abs(dx * fz - dz * fx);
         if (ahead > 0 && ahead < 9 && side < 2.4) desired = 0;
       }
+      car.braking = desired < car.speed - 0.2;
       car.speed += Math.max(-18 * dt, Math.min(10 * dt, desired - car.speed));
       car.pos.x += Math.sin(car.angle) * car.speed * dt;
       car.pos.z += Math.cos(car.angle) * car.speed * dt;

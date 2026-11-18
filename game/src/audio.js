@@ -1,6 +1,6 @@
-// Synthesised WebAudio sounds: engine hum, siren, crash, gunshot, chime, ambience. No audio files.
+// Synthesised WebAudio sounds: engine hum, two-tone siren, crash, gunshot, chime, ambience. No audio files.
 export function createAudio() {
-  let ctx = null, engineOsc = null, engineGain = null, sirenOsc = null, sirenGain = null;
+  let ctx = null, engineOsc = null, engineGain = null, sirenOsc = null, sirenGain = null, sirenLfo = null, sirenLfoGain = null;
   function ensure() {
     if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return true; }
     try {
@@ -11,6 +11,10 @@ export function createAudio() {
       sirenOsc = ctx.createOscillator(); sirenOsc.type = 'triangle'; sirenOsc.frequency.value = 700;
       sirenGain = ctx.createGain(); sirenGain.gain.value = 0;
       sirenOsc.connect(sirenGain).connect(ctx.destination); sirenOsc.start();
+      // Two-tone wail: a slow LFO sweeps the siren carrier ±170 Hz around 700 Hz.
+      sirenLfo = ctx.createOscillator(); sirenLfo.type = 'sine'; sirenLfo.frequency.value = 0.7;
+      sirenLfoGain = ctx.createGain(); sirenLfoGain.gain.value = 170;
+      sirenLfo.connect(sirenLfoGain).connect(sirenOsc.frequency); sirenLfo.start();
     } catch { ctx = null; }
     return !!ctx;
   }

@@ -1,16 +1,17 @@
 // Six sequential story missions for Damar, framed by Sinta's short dialogue lines.
 // Each mission exposes a target position for the marker/minimap and completes into the next.
+// All player-facing text is in English; names (Tanjung Arus, Damar, Sinta, Karang) are original.
 import { CITY } from './config.js';
 import { createVehicle } from './vehicles.js';
-import { makePersonMesh } from './pedestrians.js';
+import { makePersonMesh, animatePerson } from './pedestrians.js';
 
 export const MISSION_DEFS = [
-  { title: 'Paket Pertama', reward: 200, sinta: 'Sinta: "Antar paket ini ke Dermaga Timur. Jangan buka isinya."' },
-  { title: 'Mobil Titipan', reward: 350, sinta: 'Sinta: "Ambil Elang ungu di Pasar Pagi, antar ke bengkel Bukit Kelapa."' },
-  { title: 'Buron Karang', reward: 450, sinta: 'Sinta: "Itu kurir Karang yang menjebakmu. Kejar dan tabrak sampai berhenti!"' },
-  { title: 'Peti Gudang', reward: 400, sinta: 'Sinta: "Hancurkan 3 peti bukti di dermaga. Pakai tinjumu (J)."' },
-  { title: 'Kabur!', reward: 300, sinta: 'Sinta: "Polisi di mana-mana! Hilangkan bintangmu, jangan terlihat."' },
-  { title: 'Arus Terakhir', reward: 800, sinta: 'Sinta: "Final di dermaga: kalahkan penjaga Karang, lalu antar paket terakhir."' },
+  { title: 'First Package', reward: 200, sinta: 'Sinta: "Take this package to East Harbour. Do not open it."' },
+  { title: 'The Entrusted Car', reward: 350, sinta: 'Sinta: "Pick up the purple Elang at Morning Market and deliver it to the Coconut Hill workshop."' },
+  { title: "Karang's Fugitive", reward: 450, sinta: 'Sinta: "That is the Karang courier who framed you. Chase him and ram him until he stops!"' },
+  { title: 'Warehouse Crates', reward: 400, sinta: 'Sinta: "Smash 3 evidence crates at the harbour. Use your fists (J)."' },
+  { title: 'Run!', reward: 300, sinta: 'Sinta: "Police everywhere! Lose your wanted stars — stay out of sight."' },
+  { title: 'The Final Current', reward: 800, sinta: 'Sinta: "The finale at the harbour: beat the Karang guards, then deliver the last package."' },
 ];
 
 export function createMissions(scene, world) {
@@ -25,7 +26,8 @@ export function createMissions(scene, world) {
     if (sys.fugitive) { scene.remove(sys.fugitive.mesh); sys.fugitive = null; }
   }
   function spawnGuard(x, z) {
-    const mesh = makePersonMesh(0x7b241c, 0x8d5524);
+    // Guards use the articulated figure too, in syndicate maroon with dark trousers.
+    const mesh = makePersonMesh(0x7b241c, 0x8d5524, { pants: 0x1f2429, hair: 0x100c08 });
     mesh.position.set(x, 0, z); scene.add(mesh);
     const g = { mesh, pos: mesh.position, health: 70, dead: false, angle: 0, phase: 0 };
     sys.guards.push(g); return g;
@@ -65,21 +67,21 @@ export function createMissions(scene, world) {
   }
   function objective(state) {
     const d = MISSION_DEFS[sys.index];
-    if (!d) return 'Kota bebas — jelajahi Tanjung Arus.';
+    if (!d) return 'Free roam — explore Tanjung Arus.';
     switch (sys.index) {
-      case 0: return 'Antar paket ke dermaga (ikuti penanda kuning).';
-      case 1: return sys.stage === 0 ? 'Curi Elang Sport ungu di Pasar Pagi (F di dekatnya).' : 'Antar Elang itu ke Bukit Kelapa.';
-      case 2: return `Tabrak mobil buron sampai berhenti (${Math.min(3, sys.fugitive ? sys.fugitive.rammedByPlayer : 0)}/3).`;
-      case 3: return `Hancurkan peti di dermaga dengan pukulan J (${sys.cratesHit}/3).`;
-      case 4: return 'Kabur sampai bintang wanted hilang.';
-      case 5: return sys.stage === 0 ? `Kalahkan penjaga Karang (${sys.guards.filter((g) => !g.dead).length} tersisa).` : 'Antar paket terakhir ke crane dermaga.';
+      case 0: return 'Deliver the package to the harbour (follow the gold marker).';
+      case 1: return sys.stage === 0 ? 'Steal the purple Elang Sport at Morning Market (F nearby).' : 'Deliver the Elang to Coconut Hill.';
+      case 2: return `Ram the fugitive's car until it stops (${Math.min(3, sys.fugitive ? sys.fugitive.rammedByPlayer : 0)}/3).`;
+      case 3: return `Smash the harbour crates with punch J (${sys.cratesHit}/3).`;
+      case 4: return 'Escape until your wanted stars are gone.';
+      case 5: return sys.stage === 0 ? `Defeat the Karang guards (${sys.guards.filter((g) => !g.dead).length} left).` : 'Deliver the last package to the harbour crane.';
       default: return d.title;
     }
   }
   function complete(state, fx) {
     const reward = MISSION_DEFS[sys.index].reward;
     state.money += reward;
-    fx.notify(`Misi selesai: ${MISSION_DEFS[sys.index].title}  +${reward} AR$`);
+    fx.notify(`Mission complete: ${MISSION_DEFS[sys.index].title}  +${reward} AR$`);
     fx.audio.chime();
     if (sys.index >= 5) { sys.done = true; state.victory = true; state.mode = 'victory'; }
     else setup(sys.index + 1, state);
@@ -99,7 +101,11 @@ export function createMissions(scene, world) {
       if (dist < 26 && !p.inCar) {
         g.pos.x += (dx / dist) * 3.4 * dt; g.pos.z += (dz / dist) * 3.4 * dt;
         g.angle = Math.atan2(dx, dz); g.mesh.rotation.y = g.angle;
+        g.phase += dt * 3.4 * 2.2;
+        animatePerson(g.mesh, g.phase, true, { run: 0.4, t: performance.now() / 1000 });
         if (dist < 1.8) state.damagePlayer(9 * dt);
+      } else {
+        animatePerson(g.mesh, 0, false, { t: performance.now() / 1000 });
       }
     }
     // Fugitive flees along the grid in mission 3.
@@ -118,7 +124,7 @@ export function createMissions(scene, world) {
     switch (sys.index) {
       case 0: if (atTarget && !p.inCar) complete(state, fx); else if (atTarget && p.inCar) complete(state, fx); break;
       case 1:
-        if (sys.stage === 0 && sys.targetCar && sys.targetCar.stolen) { sys.stage = 1; state.missionStage = 1; fx.notify('Mobil didapat! Antar ke Bukit Kelapa.'); }
+        if (sys.stage === 0 && sys.targetCar && sys.targetCar.stolen) { sys.stage = 1; state.missionStage = 1; fx.notify('Target car secured! Take it to Coconut Hill.'); }
         else if (sys.stage === 1 && atTarget) complete(state, fx);
         break;
       case 3: break; // crates are punched via combat hook in main (notifyCratePunch)
@@ -127,7 +133,7 @@ export function createMissions(scene, world) {
         else if (state.wantedSys.wanted.stars === 0) complete(state, fx);
         break;
       case 5:
-        if (sys.stage === 0 && sys.guards.length && sys.guards.every((g) => g.dead)) { sys.stage = 1; state.missionStage = 1; fx.notify('Penjaga tumbang! Antar paket terakhir.'); }
+        if (sys.stage === 0 && sys.guards.length && sys.guards.every((g) => g.dead)) { sys.stage = 1; state.missionStage = 1; fx.notify('Guards down! Deliver the last package.'); }
         else if (sys.stage === 1 && atTarget) complete(state, fx);
         break;
       default: break;
@@ -141,7 +147,7 @@ export function createMissions(scene, world) {
       const crate = world.crates[sys.cratesHit + 2];
       if (crate) { crate.material.color.setHex(0x5a3a1a); crate.position.y = 0.8; crate.rotation.z = 0.5; }
       sys.cratesHit += 1;
-      fx.notify(`Peti hancur (${sys.cratesHit}/3)`);
+      fx.notify(`Crate smashed (${sys.cratesHit}/3)`);
       if (sys.cratesHit >= 3) complete(state, fx);
       return true;
     }

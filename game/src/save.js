@@ -1,4 +1,4 @@
-// localStorage save: mission progress, money, player position and health.
+// localStorage save: mission progress, money, player position, facing angle and health.
 import { SAVE_KEY } from './config.js';
 export function loadSave() {
   try {
@@ -15,6 +15,7 @@ export function writeSave(state) {
       mission: state.missionIndex, stage: state.missionStage,
       money: state.money, health: state.health,
       x: state.player.pos.x, z: state.player.pos.z,
+      angle: state.player.angle ?? 0,
       victory: !!state.victory,
     }));
   } catch { /* storage unavailable: play on without saving */ }

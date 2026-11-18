@@ -1,8 +1,12 @@
 // 2D canvas minimap: road grid, player arrow, police dots, mission target.
+// The canvas is displayed as a circle (CSS border-radius), so drawing is clipped to
+// the inscribed disc to keep roads and dots off the cropped corners.
 import { CITY } from './config.js';
 export function drawMinimap(canvas, state, policeUnits, target) {
   const g = canvas.getContext('2d');
   const S = canvas.width, half = CITY.half + 20;
+  g.save();
+  g.beginPath(); g.arc(S / 2, S / 2, S / 2, 0, Math.PI * 2); g.clip();
   const px = (x) => ((x + half) / (half * 2)) * S;
   const pz = (z) => ((z + half) / (half * 2)) * S;
   g.fillStyle = '#3f7a44'; g.fillRect(0, 0, S, S);
@@ -27,5 +31,7 @@ export function drawMinimap(canvas, state, policeUnits, target) {
   g.save(); g.translate(px(p.x), pz(p.z)); g.rotate(Math.atan2(Math.sin(a), -Math.cos(a)) + Math.PI);
   g.fillStyle = '#ffffff';
   g.beginPath(); g.moveTo(0, -6); g.lineTo(4, 5); g.lineTo(-4, 5); g.closePath(); g.fill(); g.restore();
-  g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 2; g.strokeRect(0, 0, S, S);
+  g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 2;
+  g.beginPath(); g.arc(S / 2, S / 2, S / 2 - 1, 0, Math.PI * 2); g.stroke();
+  g.restore();
 }

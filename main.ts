@@ -19,7 +19,8 @@ import { buildDossier } from './vendor/makefun-game.ts';
 
 // Tanjung Arus entrypoint — authored for the gta6-01 entry: this program packages the
 // three.js port-city game in game/ (Damar's six-mission story) plus its screenshots into the
-// output folder and writes the dossier the judge reads.
+// output folder and writes the dossier the judge reads. Revision round: full touch controls
+// for phones, an all-English GTA-style HUD, and articulated human characters throughout.
 const here = fileURLToPath(new URL('.', import.meta.url));
 const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 console.log(`[tanjung-arus] packaging game + screenshots into ${out}`);

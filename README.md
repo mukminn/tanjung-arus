@@ -26,22 +26,37 @@ Then open http://localhost:8080 in desktop Chrome. Move with WASD, sprint with S
 | K | Shoot (hitscan with a tracer; gunfire raises wanted heat fast) |
 | Esc / P | Pause |
 
-Watch the gold marker and the minimap for your mission target. Police spawn as your stars
-rise and give chase; break their line of sight and your heat cools until the stars are gone.
-Progress (mission, money in Arus / AR$, position, health) saves to `localStorage` automatically.
+On touch devices (or with `?touch=1`) an on-screen control layer appears instead: an
+analogue stick at the bottom left walks Damar — a gentle push walks, a full push runs — and
+drives the car (push up/down for throttle and reverse, left/right to steer). The round
+buttons at the bottom right are ENTER/EXIT (enter or leave a car), ACT (punch, or shoot if
+the punch hits nothing), and BRAKE (a hard stop that never reverses); II at the top right
+pauses, and dragging on the right half of the screen orbits the camera.
+
+Watch the gold marker and the round minimap (bottom left) for your mission target. Police
+spawn as your stars rise and give chase; break their line of sight and your heat cools —
+the last star fades as it cools — until the stars are gone. Progress (mission, money in
+Arus / AR$, position, facing angle, health) saves to `localStorage` automatically.
 
 ## How this entry was built
 
 The game is plain ES modules under `game/src/`, one job per file: `world.js` builds the
-procedural port city (road grid, canvas-textured buildings, palms, lamps, harbour water and
-crane), `vehicles.js` holds the arcade driving physics, `traffic.js` and `pedestrians.js` run
-the ambient city, `police.js` + `wanted.js` run pursuit and the 0–5 star heat system,
-`combat.js` does punch/hitscan fighting, `missions.js` runs the six-mission story, and
-`hud.js` / `minimap.js` draw the interface. three.js is vendored under `game/vendor/` so the
-whole entry plays offline from static files. All sound is synthesised live with WebAudio —
-engine, siren, crashes, shots and chimes — there are no audio files. Everything in the city
-is original: Tanjung Arus, Damar, Sinta, the Karang syndicate, and the Kancil EV, Banteng
-Pickup, Lumba Taxi and Elang Sport vehicles were invented for this entry.
+procedural port city (asphalt-textured road grid, canvas-facade buildings with shopfronts,
+awnings and rooftop clutter, palms, lamps, animated harbour water and crane, and a shadow-
+casting sun that follows the player), `vehicles.js` holds the shaped car meshes — glass
+cabins, brake lights, police lightbars, a swinging driver door — and the arcade driving
+physics, `traffic.js` and `pedestrians.js` run the ambient city, `police.js` + `wanted.js`
+run pursuit and the 0–5 star heat system, `combat.js` does punch/hitscan fighting,
+`missions.js` runs the six-mission story, `touch.js` adds the mobile control layer, and
+`hud.js` / `minimap.js` draw the GTA-style interface (round minimap bottom-left, stars and
+money top-right). Every character — Damar, pedestrians, the Karang guards — is a fully
+articulated figure with jointed two-segment arms and legs, idle breathing, walk/run gaits,
+a seated driving pose, and punch/shoot arm animations. All in-game text is in English.
+three.js is vendored under `game/vendor/` so the whole entry plays offline from static
+files. All sound is synthesised live with WebAudio — engine, two-tone siren, crashes, shots
+and chimes — there are no audio files. Everything in the city is original: Tanjung Arus,
+Damar, Sinta, the Karang syndicate, and the Kancil EV, Banteng Pickup, Lumba Taxi and Elang
+Sport vehicles were invented for this entry.
 
 ---
 

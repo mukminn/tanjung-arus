@@ -1,4 +1,6 @@
-// Keyboard + mouse input. `keys` is held state, `pressed` is edge-triggered per frame.
+// Keyboard + mouse + touch input. `keys` is held state, `pressed` is edge-triggered per frame.
+// The `touch` object is written by touch.js (analogue stick, buttons, camera drag) and read by
+// main.js / player.js each frame; keyboard behaviour is unchanged.
 export function createInput() {
   const keys = new Set();
   const pressed = new Set();
@@ -18,8 +20,9 @@ export function createInput() {
   document.addEventListener('pointerlockchange', () => {
     mouse.locked = document.pointerLockElement != null;
   });
+  const touch = { x: 0, y: 0, mag: 0, brake: false, f: false, action: false, pause: false, camDX: 0, camDY: 0 };
   return {
-    keys, mouse,
+    keys, mouse, touch,
     down: (c) => keys.has(c),
     hit: (c) => pressed.has(c),
     endFrame() { pressed.clear(); mouse.dx = 0; mouse.dy = 0; },

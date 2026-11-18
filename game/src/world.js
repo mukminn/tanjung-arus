@@ -208,6 +208,37 @@ export function createWorld(scene) {
   const cable = new THREE.Mesh(new THREE.BoxGeometry(0.2, 10, 0.2), craneMat); cable.position.set(10, 20, 0); crane.add(cable);
   crane.position.set(50, 0, CITY.dockZ + 6); scene.add(crane);
 
+  // Round 3 plaza furniture: wooden benches ringing the spawn plaza, plus extra palms
+  // and benches up at Coconut Hill (-95,-120) as a play corner for children and pets.
+  const benchMat = new THREE.MeshLambertMaterial({ color: 0x8a6642 });
+  const benchLegMat = new THREE.MeshLambertMaterial({ color: 0x37474f });
+  function addBench(x, z, ry) {
+    const b = new THREE.Group();
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 0.55), benchMat); seat.position.y = 0.48; seat.castShadow = true; b.add(seat);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.5, 0.1), benchMat); back.position.set(0, 0.85, -0.26); b.add(back);
+    for (const sx of [-0.9, 0.9]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.48, 0.5), benchLegMat); leg.position.set(sx, 0.24, 0); b.add(leg); }
+    b.position.set(x, 0, z); b.rotation.y = ry; scene.add(b);
+    colliders.push({ x, z, hw: 1.1, hd: 0.4 });
+  }
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    addBench(Math.cos(a) * 24, Math.sin(a) * 24, -a + Math.PI / 2);
+  }
+  addBench(-88, -112, 0.6); addBench(-102, -112, -0.6); addBench(-95, -128, 0);
+  for (const [px, pz] of [[-86, -120], [-104, -120], [-95, -108]]) {
+    const palm = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.34, 5.5, 6), trunkMat);
+    trunk.position.y = 2.75; trunk.castShadow = true; palm.add(trunk);
+    for (let k = 0; k < 5; k++) {
+      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.5, 3.6, 4), leafMat);
+      const a = (k / 5) * Math.PI * 2;
+      leaf.position.set(Math.cos(a) * 1.1, 5.9, Math.sin(a) * 1.1);
+      leaf.rotation.set(Math.sin(a) * 1.1, 0, -Math.cos(a) * 1.1);
+      palm.add(leaf);
+    }
+    palm.position.set(px, 0, pz); scene.add(palm);
+  }
+
   // Mission marker: glowing cylinder + floating ring, moved by the mission system.
   const marker = new THREE.Group();
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 30, 16, 1, true),

@@ -12,31 +12,41 @@ Tanjung Arus is an original open-world port-city crime game that runs in a deskt
 node serve.ts
 ```
 
-Then open http://localhost:8080 in desktop Chrome. Move with WASD, sprint with Shift, press F to enter or leave a car, J to punch, K to shoot, Esc to pause.
+Then open http://localhost:8080 in desktop Chrome. Move with WASD (run), sprint with Shift, jump with Space, crouch with C, press F to enter or leave a car, J to attack, K to kick, Q / 1–3 to change weapon, Esc to pause.
 
 ## Controls
 
 | Input | Action |
 | --- | --- |
-| WASD | Walk (camera-relative) or drive: throttle, brake/reverse, steering |
+| WASD | Run (camera-relative) or drive: throttle, brake/reverse, steering |
 | Mouse drag / pointer lock | Orbit the third-person camera |
-| Shift | Sprint on foot |
-| F | Enter or leave the nearest car — entering someone else's car is theft and raises your wanted stars |
-| J | Punch (also smashes the sabotage crates in mission 4) |
-| K | Shoot (hitscan with a tracer; gunfire raises wanted heat fast) |
+| Shift | Sprint on foot (WASD alone already runs) |
+| Space | Jump |
+| C / Ctrl | Crouch toggle — slower, lower camera, harder for police to spot; crouching still cools wanted heat faster |
+| F | Enter or leave a car — a big ENTER CAR prompt appears next to empty cars; entering someone else's car is theft |
+| J | Attack with the active weapon: punch (fists), swing (baton) or shoot (pistol) — also smashes the sabotage crates |
+| K | Kick — heavy damage with knockback, whatever weapon is active |
+| Q / 1–3 | Cycle / select an owned weapon (locked weapons must be looted or bought at ARUS ARMS) |
 | Esc / P | Pause |
 
-On touch devices (or with `?touch=1`) an on-screen control layer appears instead: an
-analogue stick at the bottom left walks Damar — a gentle push walks, a full push runs — and
-drives the car (push up/down for throttle and reverse, left/right to steer). The round
-buttons at the bottom right are ENTER/EXIT (enter or leave a car), ACT (punch, or shoot if
-the punch hits nothing), and BRAKE (a hard stop that never reverses); II at the top right
-pauses, and dragging on the right half of the screen orbits the camera.
+You start with fists only. Beat an armed enemy and pick up their dropped weapon, or buy a
+Baton (AR$ 250), a Pistol (AR$ 900) and ammo at the ARUS ARMS gun shop on the plaza —
+mission rewards are the only income. Foot police chase you at 1–2 stars and bust you if
+they hold you close (fine on release); at 3+ stars they shoot. Children and pets roam the
+city and can never be harmed.
 
-Watch the gold marker and the round minimap (bottom left) for your mission target. Police
+On touch devices (or with `?touch=1`) an on-screen control layer appears instead: an
+analogue stick in the bottom-left corner (gentle push walks, mid push runs, full push or
+the SPRINT toggle sprints) and drives the car; the bottom-right buttons are the contextual
+ENTER/EXIT (only shown next to an empty car, or as EXIT while driving), ATK (melee combo,
+or fire with the pistol), WEAPON (cycle owned weapons) and BRAKE; SPRINT / JUMP / CROUCH
+sit above the stick, II pauses, and dragging on the right half orbits the camera.
+
+Watch the gold marker and the round minimap (top right) for your mission target. Police
 spawn as your stars rise and give chase; break their line of sight and your heat cools —
 the last star fades as it cools — until the stars are gone. Progress (mission, money in
-Arus / AR$, position, facing angle, health) saves to `localStorage` automatically.
+Arus / AR$, position, facing angle, health, weapons and ammo) saves to `localStorage`
+automatically.
 
 ## How this entry was built
 
@@ -47,9 +57,10 @@ casting sun that follows the player), `vehicles.js` holds the shaped car meshes 
 cabins, brake lights, police lightbars, a swinging driver door — and the arcade driving
 physics, `traffic.js` and `pedestrians.js` run the ambient city, `police.js` + `wanted.js`
 run pursuit and the 0–5 star heat system, `combat.js` does punch/hitscan fighting,
-`missions.js` runs the six-mission story, `touch.js` adds the mobile control layer, and
-`hud.js` / `minimap.js` draw the GTA-style interface (round minimap bottom-left, stars and
-money top-right). Every character — Damar, pedestrians, the Karang guards — is a fully
+`missions.js` runs the six-mission story, `weapons.js` runs loot drops and the ARUS ARMS
+shop, `officers.js` runs foot police and the busted flow, `pets.js` runs the dogs and cats,
+`touch.js` adds the mobile control layer, and `hud.js` / `minimap.js` draw the GTA-style
+interface (stars and money top-left, round minimap top-right, weapon strip beneath it). Every character — Damar, pedestrians, the Karang guards — is a fully
 articulated figure with jointed two-segment arms and legs, idle breathing, walk/run gaits,
 a seated driving pose, and punch/shoot arm animations. All in-game text is in English.
 three.js is vendored under `game/vendor/` so the whole entry plays offline from static

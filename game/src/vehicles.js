@@ -112,6 +112,11 @@ export function createVehicle(typeKey, x, z, angle, opts = {}) {
   };
 }
 
+// Round 3 helper: a car counts as EMPTY (offered by the contextual ENTER CAR prompt)
+// only when nobody drives it — traffic cars carry driver 'npc', the player's own and
+// parked cars sit at driver null until Damar gets in.
+export function isCarEmpty(car) { return !!car && !car.dead && car.driver !== 'player' && car.driver !== 'npc'; }
+
 // Advance a player-driven car one step. Returns impact speed if it crashed, else 0.
 // `brake` (touch BRAKE button) slams the car to a stop without reversing.
 export function driveVehicle(car, dt, throttle, steer, world, allCars, brake = false) {

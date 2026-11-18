@@ -20,7 +20,8 @@ export function createInput() {
   document.addEventListener('pointerlockchange', () => {
     mouse.locked = document.pointerLockElement != null;
   });
-  const touch = { x: 0, y: 0, mag: 0, brake: false, f: false, action: false, pause: false, camDX: 0, camDY: 0 };
+  // Round 3 touch state: sprint/crouch are toggles, jump/weapon are edge flags consumed by main.js.
+  const touch = { x: 0, y: 0, mag: 0, brake: false, f: false, action: false, pause: false, camDX: 0, camDY: 0, sprint: false, jump: false, crouch: false, weapon: false };
   return {
     keys, mouse, touch,
     down: (c) => keys.has(c),

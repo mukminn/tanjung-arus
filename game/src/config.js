@@ -17,7 +17,8 @@ export const VEHICLE_TYPES = {
   lumba: { label: 'Lumba Taxi', topSpeed: 28, accel: 15, size: [1.9, 4.2], color: 0xf2c230 },
   elang: { label: 'Elang Sport', topSpeed: 40, accel: 22, size: [1.9, 4.0], color: 0x7d3cff },
 };
-export const PLAYER_CFG = { walk: 6, run: 10.5, radius: 0.55, maxHealth: 100 };
+// Round 3 movement: WASD alone runs (9), Shift sprints (13.5), a gentle touch push walks (3.6).
+export const PLAYER_CFG = { walk: 3.6, run: 9, sprint: 13.5, radius: 0.55, maxHealth: 100 };
 export const SAVE_KEY = 'tanjung-arus-save-v1';
 export const START_MONEY = 150;
 export const CURRENCY = 'AR$';

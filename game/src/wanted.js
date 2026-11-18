@@ -12,11 +12,12 @@ export function createWanted() {
   function refresh() {
     wanted.stars = wanted.heat <= 0 ? 0 : Math.min(5, 1 + Math.floor(wanted.heat / 22));
   }
-  function update(dt, seenByPolice) {
+  // decayMult (round 3): crouching still cools heat 2.4x faster; default 1 keeps old behaviour.
+  function update(dt, seenByPolice, decayMult = 1) {
     if (seenByPolice) wanted.seenTimer = 0; else wanted.seenTimer += dt;
     if (wanted.decayDelay > 0) wanted.decayDelay -= dt;
     else if (!seenByPolice && wanted.seenTimer > 2) {
-      wanted.heat = Math.max(0, wanted.heat - dt * 4.5);
+      wanted.heat = Math.max(0, wanted.heat - dt * 4.5 * decayMult);
       refresh();
     }
     // Cooling fraction: while unseen and past the decay delay, heat draining toward the

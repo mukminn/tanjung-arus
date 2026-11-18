@@ -1,6 +1,7 @@
 // Six sequential story missions for Damar, framed by Sinta's short dialogue lines.
 // Each mission exposes a target position for the marker/minimap and completes into the next.
 // All player-facing text is in English; names (Tanjung Arus, Damar, Sinta, Karang) are original.
+import * as THREE from 'three';
 import { CITY } from './config.js';
 import { createVehicle } from './vehicles.js';
 import { makePersonMesh, animatePerson } from './pedestrians.js';
@@ -9,7 +10,7 @@ export const MISSION_DEFS = [
   { title: 'First Package', reward: 200, sinta: 'Sinta: "Take this package to East Harbour. Do not open it."' },
   { title: 'The Entrusted Car', reward: 350, sinta: 'Sinta: "Pick up the purple Elang at Morning Market and deliver it to the Coconut Hill workshop."' },
   { title: "Karang's Fugitive", reward: 450, sinta: 'Sinta: "That is the Karang courier who framed you. Chase him and ram him until he stops!"' },
-  { title: 'Warehouse Crates', reward: 400, sinta: 'Sinta: "Smash 3 evidence crates at the harbour. Use your fists (J)."' },
+  { title: 'Warehouse Crates', reward: 400, sinta: 'Sinta: "Smash 3 evidence crates at the harbour. Punch, swing or kick them (J / K)."' },
   { title: 'Run!', reward: 300, sinta: 'Sinta: "Police everywhere! Lose your wanted stars — stay out of sight."' },
   { title: 'The Final Current', reward: 800, sinta: 'Sinta: "The finale at the harbour: beat the Karang guards, then deliver the last package."' },
 ];
@@ -17,7 +18,7 @@ export const MISSION_DEFS = [
 export function createMissions(scene, world) {
   const sys = {
     index: 0, stage: 0, done: false, guards: [], targetCar: null, fugitive: null,
-    cratesHit: 0, dialogue: '', dialogueTimer: 0,
+    cratesHit: 0, dialogue: '', dialogueTimer: 0, _tracers: [],
   };
   function clearActors() {
     for (const g of sys.guards) scene.remove(g.mesh);
@@ -25,12 +26,24 @@ export function createMissions(scene, world) {
     if (sys.targetCar) { scene.remove(sys.targetCar.mesh); sys.targetCar = null; }
     if (sys.fugitive) { scene.remove(sys.fugitive.mesh); sys.fugitive = null; }
   }
-  function spawnGuard(x, z) {
+  function spawnGuard(x, z, weapon = null, opts = {}) {
     // Guards use the articulated figure too, in syndicate maroon with dark trousers.
-    const mesh = makePersonMesh(0x7b241c, 0x8d5524, { pants: 0x1f2429, hair: 0x100c08 });
+    // Round 3: guards/thugs can carry a baton or a pistol (visible prop in the hand);
+    // `permanent` warehouse thugs idle at their post until provoked.
+    const mesh = makePersonMesh(0x7b241c, 0x8d5524, { pants: 0x1f2429, hair: 0x100c08, prop: weapon || undefined });
     mesh.position.set(x, 0, z); scene.add(mesh);
-    const g = { mesh, pos: mesh.position, health: 70, dead: false, angle: 0, phase: 0 };
+    const g = {
+      mesh, pos: mesh.position, health: opts.health ?? 70, dead: false, angle: 0, phase: 0,
+      weapon, ammo: opts.ammo ?? 0, shootCd: 1.2, kb: { x: 0, z: 0 }, stagger: 0,
+      permanent: !!opts.permanent, home: { x, z }, aggro: !opts.permanent,
+      finale: !!opts.finale, maxHealth: opts.health ?? 70,
+    };
     sys.guards.push(g); return g;
+  }
+  function spawnThugs() {
+    // Two warehouse thugs stand guard by the dock crates in EVERY setup: one baton, one pistol.
+    spawnGuard(-20, CITY.dockZ + 2, 'baton', { permanent: true, health: 80 });
+    spawnGuard(4, CITY.dockZ + 6, 'pistol', { permanent: true, health: 80, ammo: 8 });
   }
   function setup(index, state) {
     clearActors();
@@ -49,8 +62,12 @@ export function createMissions(scene, world) {
       sys.fugitive.ai = { angle: 0 };
       scene.add(sys.fugitive.mesh); state.extraCars.push(sys.fugitive);
     }
+    spawnThugs();
     if (index === 5) {
-      spawnGuard(28, CITY.dockZ - 2); spawnGuard(38, CITY.dockZ + 2); spawnGuard(33, CITY.dockZ - 8);
+      // Finale guards (round 3): two batons and one pistol with 10 rounds.
+      spawnGuard(28, CITY.dockZ - 2, 'baton', { finale: true });
+      spawnGuard(38, CITY.dockZ + 2, 'baton', { finale: true });
+      spawnGuard(33, CITY.dockZ - 8, 'pistol', { ammo: 10, finale: true });
     }
   }
   function targetPos(state) {
@@ -72,9 +89,9 @@ export function createMissions(scene, world) {
       case 0: return 'Deliver the package to the harbour (follow the gold marker).';
       case 1: return sys.stage === 0 ? 'Steal the purple Elang Sport at Morning Market (F nearby).' : 'Deliver the Elang to Coconut Hill.';
       case 2: return `Ram the fugitive's car until it stops (${Math.min(3, sys.fugitive ? sys.fugitive.rammedByPlayer : 0)}/3).`;
-      case 3: return `Smash the harbour crates with punch J (${sys.cratesHit}/3).`;
+      case 3: return `Smash the harbour crates with attack J or kick K (${sys.cratesHit}/3).`;
       case 4: return 'Escape until your wanted stars are gone.';
-      case 5: return sys.stage === 0 ? `Defeat the Karang guards (${sys.guards.filter((g) => !g.dead).length} left).` : 'Deliver the last package to the harbour crane.';
+      case 5: return sys.stage === 0 ? `Defeat the Karang guards (${sys.guards.filter((g) => g.finale && !g.dead).length} left).` : 'Deliver the last package to the harbour crane.';
       default: return d.title;
     }
   }
@@ -94,10 +111,38 @@ export function createMissions(scene, world) {
     else world.marker.visible = false;
     const p = state.player;
     const atTarget = tp && Math.hypot(p.pos.x - tp.x, p.pos.z - tp.z) < 5;
-    // Guards drift toward Damar in the finale and swing at him.
+    // Guards drift toward Damar and swing at him. Round 3: warehouse thugs hold their
+    // post until Damar comes within 9 m or hurts them; pistol guards shoot from range.
+    for (const t of sys._tracers) { t.life -= dt; if (t.life <= 0) scene.remove(t.line); }
+    sys._tracers = sys._tracers.filter((t) => t.life > 0);
     for (const g of sys.guards) {
       if (g.dead) { g.mesh.rotation.x = Math.PI / 2; g.mesh.position.y = 0.25; continue; }
-      const dx = p.pos.x - g.pos.x, dz = p.pos.z - g.pos.z, dist = Math.hypot(dx, dz);
+      if (g.stagger > 0) {
+        g.stagger -= dt;
+        g.pos.x += g.kb.x * dt * 3.5; g.pos.z += g.kb.z * dt * 3.5;
+        animatePerson(g.mesh, g.phase, false, { t: performance.now() / 1000 });
+        continue;
+      }
+      const dx = p.pos.x - g.pos.x, dz = p.pos.z - g.pos.z, dist = Math.hypot(dx, dz) || 0.001;
+      if (g.permanent && !g.aggro && (dist < 9 || g.health < g.maxHealth)) g.aggro = true;
+      if (!g.aggro) { animatePerson(g.mesh, 0, false, { t: performance.now() / 1000 }); continue; }
+      g.shootCd -= dt;
+      // Pistol guard: hold at range and shoot (dmg 5, cooldown 1.7 s, simple tracer).
+      if (g.weapon === 'pistol' && g.ammo > 0 && dist < 16 && dist > 5 && !p.inCar) {
+        g.angle = Math.atan2(dx, dz); g.mesh.rotation.y = g.angle;
+        g.mesh.userData.attack = { kind: 'shoot', p: 0.4 };
+        animatePerson(g.mesh, g.phase, false, { t: performance.now() / 1000 });
+        if (g.shootCd <= 0) {
+          g.shootCd = 1.7; g.ammo -= 1;
+          if (fx.audio) fx.audio.shot();
+          const line = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(g.pos.x, 1.4, g.pos.z), new THREE.Vector3(p.pos.x, 1.2, p.pos.z)]),
+            new THREE.LineBasicMaterial({ color: 0xffb27a, transparent: true, opacity: 0.9 }));
+          scene.add(line); sys._tracers.push({ line, life: 0.09 });
+          state.damagePlayer(5);
+        }
+        continue;
+      }
       if (dist < 26 && !p.inCar) {
         g.pos.x += (dx / dist) * 3.4 * dt; g.pos.z += (dz / dist) * 3.4 * dt;
         g.angle = Math.atan2(dx, dz); g.mesh.rotation.y = g.angle;
@@ -133,7 +178,7 @@ export function createMissions(scene, world) {
         else if (state.wantedSys.wanted.stars === 0) complete(state, fx);
         break;
       case 5:
-        if (sys.stage === 0 && sys.guards.length && sys.guards.every((g) => g.dead)) { sys.stage = 1; state.missionStage = 1; fx.notify('Guards down! Deliver the last package.'); }
+        if (sys.stage === 0 && sys.guards.some((g) => g.finale) && sys.guards.filter((g) => g.finale).every((g) => g.dead)) { sys.stage = 1; state.missionStage = 1; fx.notify('Guards down! Deliver the last package.'); }
         else if (sys.stage === 1 && atTarget) complete(state, fx);
         break;
       default: break;

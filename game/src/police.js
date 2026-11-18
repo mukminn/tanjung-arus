@@ -39,7 +39,9 @@ export function createPolice(scene) {
       if (u.dead) continue;
       const dx = target.x - u.pos.x, dz = target.z - u.pos.z;
       const dist = Math.hypot(dx, dz);
-      if (dist < 70) anySees = true;
+      // Round 3: a crouched, still Damar is only spotted inside 26 m (was a flat 70 m).
+      const seeR = (state.player.crouched && !state.player.moving && !state.player.inCar) ? 26 : 70;
+      if (dist < seeR) anySees = true;
       if (state.wanted.stars === 0) {
         u.speed = Math.max(0, u.speed - 12 * dt);
         if (dist > 90) { scene.remove(u.mesh); units.splice(i, 1); continue; }
@@ -67,5 +69,10 @@ export function createPolice(scene) {
     }
     return anySees;
   }
-  return { units, update, spawn };
+  // Round 3: full clear for the busted flow — remove every unit mesh at once.
+  function clear() {
+    for (const u of units) scene.remove(u.mesh);
+    units.length = 0;
+  }
+  return { units, update, spawn, clear };
 }

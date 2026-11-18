@@ -48,5 +48,10 @@ export function createAudio() {
     punch() { noise(0.06, 0.15); },
     chime() { blip(880, 0.15, 'sine', 0.12); setTimeout(() => blip(1320, 0.25, 'sine', 0.12), 110); },
     hurt() { blip(160, 0.15, 'sawtooth', 0.1, -60); },
+    // Round 3 additions: soft rising jump blip, baton whoosh, dry-fire click, pickup sparkle.
+    jump() { blip(320, 0.16, 'sine', 0.07, 240); },
+    whoosh() { noise(0.12, 0.1); },
+    dryClick() { blip(900, 0.04, 'square', 0.06, -300); },
+    pickup() { blip(660, 0.1, 'sine', 0.1); setTimeout(() => blip(990, 0.14, 'sine', 0.1), 70); },
   };
 }

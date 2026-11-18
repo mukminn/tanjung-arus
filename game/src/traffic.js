@@ -14,23 +14,34 @@ export function createTraffic(scene, count = 10) {
     const lane = LANES[i % LANES.length] + 3.5;
     const t = -CITY.half + ((i * 67) % (CITY.half * 2));
     const car = createVehicle(TYPES[i % TYPES.length], horiz ? t : lane, horiz ? lane : t, horiz ? Math.PI / 2 : 0);
+    // Round 3: traffic cars are OCCUPIED — driver 'npc' means the contextual ENTER CAR
+    // prompt never offers them (only truly empty parked cars do). F can still steal one.
+    car.driver = 'npc';
     car.ai = { horiz, dir: 1, speed: 9 + (i % 4), targetSpeed: 9 + (i % 4), turnCooldown: 0 };
     scene.add(car.mesh);
     cars.push(car);
   }
-  function update(dt, allCars) {
+  // Round 3: update also receives the pedestrian list — traffic brakes for anyone
+  // (above all a child) standing within 6 m directly ahead.
+  function update(dt, allCars, peds = []) {
     for (const car of cars) {
       if (car.dead || car.driver === 'player') continue;
       const ai = car.ai;
       ai.turnCooldown -= dt;
       // Brake if something is just ahead.
       let desired = ai.targetSpeed;
+      const fx = Math.sin(car.angle), fz = Math.cos(car.angle);
       for (const other of allCars) {
         if (other === car) continue;
-        const fx = Math.sin(car.angle), fz = Math.cos(car.angle);
         const dx = other.pos.x - car.pos.x, dz = other.pos.z - car.pos.z;
         const ahead = dx * fx + dz * fz, side = Math.abs(dx * fz - dz * fx);
         if (ahead > 0 && ahead < 9 && side < 2.4) desired = 0;
+      }
+      for (const ped of peds) {
+        if (ped.dead) continue;
+        const dx = ped.pos.x - car.pos.x, dz = ped.pos.z - car.pos.z;
+        const ahead = dx * fx + dz * fz, side = Math.abs(dx * fz - dz * fx);
+        if (ahead > 0 && ahead < 6 && side < 1.8) desired = 0;
       }
       car.braking = desired < car.speed - 0.2;
       car.speed += Math.max(-18 * dt, Math.min(10 * dt, desired - car.speed));

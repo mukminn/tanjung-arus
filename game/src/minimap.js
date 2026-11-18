@@ -1,8 +1,11 @@
 // 2D canvas minimap: road grid, player arrow, police dots, mission target.
+// Round 3 adds: the ARUS ARMS shop (yellow square), foot officers (blue, like car
+// units), and weapon drops (orange dots) when the caller passes them in state.
 // The canvas is displayed as a circle (CSS border-radius), so drawing is clipped to
 // the inscribed disc to keep roads and dots off the cropped corners.
 import { CITY } from './config.js';
-export function drawMinimap(canvas, state, policeUnits, target) {
+import { SHOP_DOOR } from './weapons.js';
+export function drawMinimap(canvas, state, policeUnits, target, extras = {}) {
   const g = canvas.getContext('2d');
   const S = canvas.width, half = CITY.half + 20;
   g.save();
@@ -22,8 +25,16 @@ export function drawMinimap(canvas, state, policeUnits, target) {
     g.strokeStyle = '#ffd94d'; g.lineWidth = 1.5;
     g.beginPath(); g.arc(px(target.x), pz(target.z), 8 + Math.sin(performance.now() / 200) * 2, 0, Math.PI * 2); g.stroke();
   }
+  // ARUS ARMS shop marker: a yellow square at the kiosk door.
+  g.fillStyle = '#ffd94d';
+  g.fillRect(px(SHOP_DOOR.x) - 4, pz(SHOP_DOOR.z) - 4, 8, 8);
   g.fillStyle = '#2f6fd0';
   for (const u of policeUnits) { if (!u.dead) { g.beginPath(); g.arc(px(u.pos.x), pz(u.pos.z), 3.5, 0, Math.PI * 2); g.fill(); } }
+  // Foot officers share the police blue.
+  for (const o of (extras.officers || [])) { if (!o.dead) { g.beginPath(); g.arc(px(o.pos.x), pz(o.pos.z), 3.5, 0, Math.PI * 2); g.fill(); } }
+  // Weapon drops glow orange.
+  g.fillStyle = '#ff8c1a';
+  for (const d of (extras.drops || [])) { g.beginPath(); g.arc(px(d.pos.x), pz(d.pos.z), 3, 0, Math.PI * 2); g.fill(); }
   g.fillStyle = '#e74c3c';
   for (const c of state.allCars) { if (c.isTarget && !c.dead) { g.beginPath(); g.arc(px(c.pos.x), pz(c.pos.z), 3.5, 0, Math.PI * 2); g.fill(); } }
   const p = state.player.inCar ? state.player.inCar.pos : state.player.pos;

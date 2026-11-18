@@ -9,33 +9,56 @@
   #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   #ui { position: fixed; inset: 0; pointer-events: none; }
   .panel { position: absolute; background: rgba(10,25,35,.72); color: #eef6f8; border-radius: 10px; padding: 10px 14px; }
-  /* GTA-style HUD: stars + money + health, top-right. */
-  #stats { position: absolute; top: 14px; right: 14px; text-align: right; width: fit-content; }
+  /* Round 3 layout: stats top-LEFT, minimap top-RIGHT, joystick bottom-LEFT. */
+  #stats { position: absolute; top: 14px; left: 14px; text-align: left; width: fit-content; }
   #stars { font-size: 30px; letter-spacing: 3px; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,.6); }
   #stars .dim { color: #46525e; }
   #stars.flash { animation: starflash .18s linear infinite alternate; }
   @keyframes starflash { from { transform: scale(1); filter: brightness(1); } to { transform: scale(1.12); filter: brightness(1.7); } }
   #money { font-size: 26px; font-weight: 800; color: #37d67a; text-shadow: 0 2px 4px rgba(0,0,0,.65); margin: 2px 0 6px; }
-  #healthbar { height: 7px; width: 150px; margin-left: auto; background: #3a4750; border-radius: 4px; overflow: hidden; }
+  #healthbar { height: 7px; width: 150px; background: #3a4750; border-radius: 4px; overflow: hidden; }
   #healthfill { height: 100%; width: 100%; background: #2ecc71; transition: width .2s; }
-  /* Round minimap, bottom-left, district label beneath it. */
-  #mapwrap { position: absolute; left: 14px; bottom: 14px; text-align: center; }
+  /* Round minimap, top-right, district label beneath it. */
+  #mapwrap { position: absolute; right: 14px; top: 14px; text-align: center; }
   #minimap { display: block; border-radius: 50%; border: 4px solid #10181f; box-shadow: 0 2px 14px rgba(0,0,0,.55); background: #3f7a44; }
   #district { margin-top: 5px; font-size: 13px; font-weight: 600; color: #fff; text-shadow: 0 1px 3px #000; }
+  /* Weapon strip sits directly under the minimap (top-right). */
+  #weapon-strip { position: absolute; right: 14px; top: 224px; display: flex; gap: 6px; }
+  .wslot { background: rgba(10,25,35,.72); color: #eef6f8; border: 2px solid transparent; border-radius: 8px; padding: 5px 9px; font-size: 13px; font-weight: 700; }
+  .wslot.locked { opacity: .45; }
+  .wslot.active { border-color: #ffd94d; color: #ffd94d; }
   #objective { top: 14px; left: 50%; transform: translateX(-50%); max-width: 520px; text-align: center; font-size: 15px; }
   #dialogue { bottom: 108px; left: 50%; transform: translateX(-50%); max-width: 560px; background: rgba(60,40,8,.85); font-style: italic; }
   #speed { right: 14px; bottom: 14px; font-size: 17px; font-weight: 600; }
-  #notify { position: absolute; top: 76px; left: 50%; transform: translateX(-50%); background: rgba(20,90,50,.9); color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 16px; opacity: 0; transition: opacity .4s; }
+  #notify { position: absolute; top: 76px; left: 50%; transform: translateX(-50%); background: rgba(20,90,50,.9); color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 16px; opacity: 0; transition: opacity .4s; pointer-events: none; z-index: 8; }
   #hint { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,.75); font-size: 12px; text-shadow: 0 1px 3px #000; white-space: nowrap; }
-  /* Touch controls: analogue stick bottom-left, stacked buttons bottom-right. */
+  /* Crosshair: dot + ring, centre screen, pistol only. */
+  #crosshair { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; transform: translate(-50%, -50%); border: 2px solid rgba(255,255,255,.85); border-radius: 50%; pointer-events: none; }
+  #crosshair .cdot { position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; background: #ffd94d; border-radius: 50%; transform: translate(-50%, -50%); }
+  #crouch-tag { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); background: rgba(10,25,35,.8); color: #9fd4e8; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 700; }
+  #bust-tag { position: absolute; left: 50%; top: 34%; transform: translateX(-50%); color: #ff5252; font-size: 30px; font-weight: 900; letter-spacing: 2px; text-shadow: 0 2px 6px #000; animation: starflash .2s linear infinite alternate; }
+  #enter-prompt { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); background: rgba(20,90,50,.92); color: #fff; padding: 12px 22px; border-radius: 12px; font-size: 19px; font-weight: 800; box-shadow: 0 4px 16px rgba(0,0,0,.5); }
+  /* ARUS ARMS shop panel: real DOM buttons, clickable by mouse / touch / CDP. */
+  #shop-panel { position: absolute; left: 50%; top: 90px; transform: translateX(-50%); width: 320px; background: rgba(12,20,28,.94); color: #eef6f8; border: 2px solid #ffd94d; border-radius: 12px; padding: 14px 16px; pointer-events: auto; z-index: 9; }
+  #shop-panel h3 { margin: 0 0 6px; color: #ffd94d; font-size: 17px; }
+  #shop-balance { font-weight: 700; color: #37d67a; margin-bottom: 8px; }
+  .shop-row { display: flex; justify-content: space-between; align-items: center; margin: 7px 0; font-size: 14px; }
+  .shop-row button { pointer-events: auto; background: #ffd94d; color: #20303a; border: 0; border-radius: 8px; padding: 7px 14px; font-weight: 800; cursor: pointer; }
+  .shop-note { font-size: 12px; opacity: .75; margin: 8px 0 0; }
+  /* Touch controls: stick bottom-left corner, two-column buttons bottom-right. */
   #touch-ui { position: fixed; inset: 0; pointer-events: none; touch-action: none; z-index: 5; }
-  #joy-base { position: absolute; left: 22px; bottom: 120px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.35); pointer-events: auto; touch-action: none; }
+  #joy-base { position: absolute; left: 18px; bottom: 18px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.35); pointer-events: auto; touch-action: none; }
   #joy-knob { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; border-radius: 50%; background: rgba(255,255,255,.45); border: 2px solid rgba(255,255,255,.6); transform: translate(-50%, -50%); }
-  #touch-btns { position: absolute; right: 16px; bottom: 110px; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
-  #touch-btns button { width: 64px; height: 64px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); background: rgba(10,25,35,.55); color: #fff; font-size: 12px; font-weight: 700; pointer-events: auto; touch-action: none; }
+  #touch-row { position: absolute; left: 16px; bottom: 150px; display: flex; gap: 8px; }
+  #touch-row button { width: 56px; height: 56px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); background: rgba(10,25,35,.55); color: #fff; font-size: 10px; font-weight: 700; pointer-events: auto; touch-action: none; }
+  #touch-btns { position: absolute; right: 14px; bottom: 70px; display: grid; grid-template-columns: 64px 64px; gap: 10px; justify-items: center; }
+  #touch-btns button { width: 64px; height: 64px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); background: rgba(10,25,35,.55); color: #fff; font-size: 11px; font-weight: 700; pointer-events: auto; touch-action: none; }
   #touch-btns button:active { background: rgba(255,217,77,.7); color: #20303a; }
-  #btn-t-pause { position: fixed; top: 96px; right: 14px; z-index: 10; width: 48px !important; height: 48px !important; }
-  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #fff; background: linear-gradient(180deg, rgba(13,60,90,.88), rgba(8,35,30,.92)); pointer-events: auto; padding: 20px; }
+  #touch-btns button.on, #touch-row button.on { background: rgba(255,217,77,.85); color: #20303a; }
+  #touch-btns button.ctx-hidden { display: none; }
+  #btn-t-f { border-color: #37d67a !important; box-shadow: 0 0 0 3px rgba(55,214,122,.35); }
+  #btn-t-pause { position: fixed; top: auto; right: 14px; bottom: 300px; z-index: 10; width: 48px !important; height: 48px !important; }
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #fff; background: linear-gradient(180deg, rgba(13,60,90,.88), rgba(8,35,30,.92)); pointer-events: auto; padding: 20px; z-index: 20; }
   .screen h1 { font-size: 54px; margin: 0 0 8px; letter-spacing: 3px; color: #ffd94d; text-shadow: 0 3px 0 #b3541e; }
   .screen .sub { font-size: 19px; margin: 0 0 10px; }
   .screen .story { max-width: 560px; line-height: 1.5; opacity: .9; }
@@ -44,24 +67,37 @@
   .screen .keys { margin-top: 18px; font-size: 13px; opacity: .75; }
   @media (max-width: 700px) {
     .screen h1 { font-size: 36px; }
-    #objective { max-width: 92vw; font-size: 13px; top: 8px; }
-    #stats { top: 8px; right: 8px; min-width: 140px; }
-    #stars { font-size: 22px; }
-    #money { font-size: 20px; }
-    #mapwrap { left: 8px; bottom: 8px; }
-    #minimap { width: 116px; height: 116px; box-sizing: border-box; }
-    #joy-base { left: 130px; bottom: 20px; }
-    #speed { bottom: 300px; right: 10px; font-size: 14px; }
-    #dialogue { bottom: 300px; max-width: 92vw; }
+    #objective { max-width: 52vw; font-size: 12px; top: 8px; left: 46%; }
+    #stats { top: 8px; left: 8px; }
+    #stars { font-size: 20px; }
+    #money { font-size: 19px; }
+    #healthbar { width: 110px; }
+    #mapwrap { right: 8px; top: 8px; }
+    #minimap { width: 104px; height: 104px; box-sizing: border-box; }
+    #weapon-strip { right: 8px; top: 140px; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .wslot { font-size: 11px; padding: 4px 7px; }
+    #joy-base { left: 16px; bottom: 16px; width: 108px; height: 108px; }
+    #touch-row { left: 12px; bottom: 134px; }
+    #touch-row button { width: 50px; height: 50px; }
+    #touch-btns { right: 10px; bottom: 64px; grid-template-columns: 58px 58px; gap: 8px; }
+    #touch-btns button { width: 58px; height: 58px; font-size: 10px; }
+    #btn-t-pause { bottom: 268px; right: 10px; }
+    #speed { bottom: 210px; right: 10px; font-size: 13px; max-width: 40vw; }
+    #dialogue { bottom: 320px; max-width: 92vw; }
+    #enter-prompt { bottom: 240px; font-size: 16px; }
+    #shop-panel { top: 150px; width: min(320px, 88vw); }
     #hint { display: none; }
   }
   @media (max-height: 500px) {
-    #mapwrap { left: 8px; bottom: 8px; }
-    #minimap { width: 104px; height: 104px; box-sizing: border-box; }
-    #joy-base { left: 118px; bottom: 14px; }
-  }
-  @media (max-width: 640px) {
-    #objective { max-width: 56vw; font-size: 13px; }
+    #mapwrap { right: 8px; top: 8px; }
+    #minimap { width: 92px; height: 92px; box-sizing: border-box; }
+    #weapon-strip { top: 122px; right: 8px; }
+    #joy-base { left: 16px; bottom: 14px; width: 96px; height: 96px; }
+    #touch-row { bottom: 120px; left: 12px; }
+    #touch-btns { bottom: 40px; }
+    #btn-t-pause { bottom: auto; top: 160px; right: 10px; }
+    #speed { bottom: 190px; right: 150px; }
+    #objective { max-width: 52vw; }
   }
 </style>
 <script type="importmap">
